@@ -1,3 +1,4 @@
+
 "--------------------------------------------------------------------------------
 "
 "  Copyright (c) 2010 Michael Smith <msmith@msmith.id.au>
@@ -25,16 +26,24 @@
 "--------------------------------------------------------------------------------
 
 " Mappings excluding line below.
-onoremap <silent>ai :<C-u>cal <Sid>HandleTextObjectMapping(0, 0, 0, [line("."), line("."), col("."), col(".")])<CR>
+onoremap <silent>aI :<C-u>cal <Sid>HandleTextObjectMapping(0, 0, 0, [line("."), line("."), col("."), col(".")])<CR>
 onoremap <silent>ii :<C-u>cal <Sid>HandleTextObjectMapping(1, 0, 0, [line("."), line("."), col("."), col(".")])<CR>
-vnoremap <silent>ai :<C-u>cal <Sid>HandleTextObjectMapping(0, 0, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
+vnoremap <silent>aI :<C-u>cal <Sid>HandleTextObjectMapping(0, 0, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 vnoremap <silent>ii :<C-u>cal <Sid>HandleTextObjectMapping(1, 0, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 
 " Mappings including line below.
-onoremap <silent>aI :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 0, [line("."), line("."), col("."), col(".")])<CR>
+onoremap <silent>ai :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 0, [line("."), line("."), col("."), col(".")])<CR>
 onoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 0, [line("."), line("."), col("."), col(".")])<CR>
-vnoremap <silent>aI :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
+vnoremap <silent>ai :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 vnoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
+
+onoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 1)<cr>
+nnoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 0)<cr>
+xnoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 1)<cr>
+
+onoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 1)<cr>
+nnoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 0)<cr>
+xnoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 1)<cr>
 
 let s:l0 = -1
 let s:l1 = -1
@@ -201,7 +210,7 @@ function! <Sid>TextObject(inner, incbelow, vis, range, count)
 
 	" Apply the range we have found. Make sure to use the current visual mode.
 	call cursor(s:l0, s:c0)
-	exe "normal! " . vismode
+    exe "normal! " . vismode
 	call cursor(s:l1, s:c1)
 	normal! o
 
@@ -222,3 +231,41 @@ endfunction
 function! <Sid>HandleTextObjectMapping(inner, incbelow, vis, range)
 	call <Sid>TextObject(a:inner, a:incbelow, a:vis, a:range, v:count1)
 endfunction
+
+function! s:GoToIndentEnd(dir, enableVisMode)
+    let lineNo = line(".")
+    let maxLine = line("$")
+
+    while getline(lineNo) =~# "^\s*$" && lineNo <=# maxLine && lineNo >= 1
+        let lineNo = lineNo + a:dir
+    endwhile
+
+    let indentLevel = indent(lineNo)
+
+    " If at the start/end of the indent, go to the next one
+    if lineNo == line(".")
+        if (a:dir == 1 && lineNo < maxLine) || (a:dir == -1 && lineNo > 1)
+            let nextLineNo = lineNo+a:dir
+
+            if getline(nextLineNo) !~# "^\s*$"
+                let indentLevel = min([indentLevel, indent(nextLineNo)])
+            endif
+        endif
+    endif
+
+    exec "normal! m`"
+    if a:enableVisMode
+        exe "normal! V"
+    end
+
+    let lineNo = line(".") + a:dir
+    let lineStr = getline(lineNo)
+
+    while (lineStr =~# "^\s*$" || indent(lineNo) >=# indentLevel) && lineNo <= maxLine && lineNo >= 1
+        exe "normal! " . (a:dir == 1 ? 'j' : 'k')
+        let lineNo = lineNo + a:dir
+        let lineStr = getline(lineNo)
+    endwhile
+    exec "normal! ^"
+endfunction
+
