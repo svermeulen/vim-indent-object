@@ -37,13 +37,13 @@ onoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 0, [line("."), 
 vnoremap <silent>ai :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 vnoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 
-onoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 1)<cr>
-nnoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 0)<cr>
-xnoremap <silent> ]i :<c-u>call <SID>GoToIndentEnd(1, 1)<cr>
+onoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 1, 0)<cr>
+nnoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 0, 0)<cr>
+xnoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 1, 0)<cr>
 
-onoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 1)<cr>
-nnoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 0)<cr>
-xnoremap <silent> [i :<c-u>call <SID>GoToIndentEnd(-1, 1)<cr>
+onoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 1, 0)<cr>
+nnoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 0, 0)<cr>
+xnoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 1, 0)<cr>
 
 let s:l0 = -1
 let s:l1 = -1
@@ -232,7 +232,7 @@ function! <Sid>HandleTextObjectMapping(inner, incbelow, vis, range)
 	call <Sid>TextObject(a:inner, a:incbelow, a:vis, a:range, v:count1)
 endfunction
 
-function! s:GoToIndentEnd(dir, enableVisMode)
+function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
     let lineNo = line(".")
     let maxLine = line("$")
 
@@ -258,14 +258,25 @@ function! s:GoToIndentEnd(dir, enableVisMode)
         exe "normal! V"
     end
 
-    let lineNo = line(".") + a:dir
-    let lineStr = getline(lineNo)
+    let lineNo = line(".")
+    let lastNonEmptyLine = line(".")
 
-    while (lineStr =~# "^\s*$" || indent(lineNo) >=# indentLevel) && lineNo <= maxLine && lineNo >= 1
-        exe "normal! " . (a:dir == 1 ? 'j' : 'k')
+    while 1
         let lineNo = lineNo + a:dir
         let lineStr = getline(lineNo)
+
+        let isEmpty = (lineStr =~# "^\s*$")
+
+        if !isEmpty && indent(lineNo) < indentLevel || lineNo == maxLine || lineNo == 1
+            break
+        endif
+
+        if !isEmpty
+            let lastNonEmptyLine = lineNo
+        endif
     endwhile
+
+    exec "keepjumps normal! ".lastNonEmptyLine."G"
     exec "normal! ^"
 endfunction
 
