@@ -232,7 +232,7 @@ function! <Sid>HandleTextObjectMapping(inner, incbelow, vis, range)
 	call <Sid>TextObject(a:inner, a:incbelow, a:vis, a:range, v:count1)
 endfunction
 
-function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
+function! indentobject#GetIndentEnd(dir)
     let lineNo = line(".")
     let maxLine = line("$")
 
@@ -253,11 +253,6 @@ function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
         endif
     endif
 
-    exec "normal! m`"
-    if a:enableVisMode
-        exe "normal! V"
-    end
-
     let lineNo = line(".")
     let lastNonEmptyLine = line(".")
 
@@ -275,6 +270,18 @@ function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
             let lastNonEmptyLine = lineNo
         endif
     endwhile
+
+    return lastNonEmptyLine
+endfunction
+
+function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
+
+    let lastNonEmptyLine = indentobject#GetIndentEnd(a:dir)
+
+    exec "normal! m`"
+    if a:enableVisMode
+        exe "normal! V"
+    end
 
     exec "keepjumps normal! ".lastNonEmptyLine."G"
     exec "normal! ^"
