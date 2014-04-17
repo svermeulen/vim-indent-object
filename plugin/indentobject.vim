@@ -37,12 +37,15 @@ onoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 0, [line("."), 
 xnoremap <silent>oi :<C-u>cal <Sid>HandleTextObjectMapping(0, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 xnoremap <silent>iI :<C-u>cal <Sid>HandleTextObjectMapping(1, 1, 1, [line("'<"), line("'>"), col("'<"), col("'>")])<CR><Esc>gv
 
-onoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 1, 0)<cr>
-nnoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 0, 0)<cr>
+nnoremap <silent> ]]i :<c-u>call indentobject#GoToIndentEnd(1, 0, 0)<cr>
+nnoremap <silent> [[i :<c-u>call indentobject#GoToIndentEnd(-1, 0, 0)<cr>
+
+onoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 1, 1)<cr>
+nnoremap <silent> ]i :<c-u>call indentobject#GoToIndentEnd(1, 0, 1)<cr>
 xnoremap <expr> <silent> ]i indentobject#GoToIndentEndVisualMode(1)
 
-onoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 1, 0)<cr>
-nnoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 0, 0)<cr>
+onoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 1, 1)<cr>
+nnoremap <silent> [i :<c-u>call indentobject#GoToIndentEnd(-1, 0, 1)<cr>
 xnoremap <expr> <silent> [i indentobject#GoToIndentEndVisualMode(-1)
 
 let s:l0 = -1
@@ -294,7 +297,9 @@ function! indentobject#GoToIndentEnd(dir, enableVisMode, setmark)
 
     let lastNonEmptyLine = indentobject#GetIndentEnd(line('.'), a:dir)
 
-    exec "normal! m`"
+    if a:setmark
+        exec "normal! m`"
+    endif
 
     if a:enableVisMode
         exe "normal! V"
